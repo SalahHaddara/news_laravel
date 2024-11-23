@@ -3,58 +3,65 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
-    public function index(): JsonResponse
+    function get_news()
     {
-        $news = News::all();
-        return response()->json($news);
+        $news = News::latest()->get();
+
+        return response()->json([
+            "news" => $news
+        ]);
     }
 
-    public function store(Request $request): JsonResponse
+    function get_news_item($id)
     {
-        $request->validate([
+        $news = News::find($id);
+
+        return response()->json([
+            "news" => $news
+        ]);
+    }
+
+    function create_news(Request $request)
+    {
+        $validated = $request->validate([
             'title' => 'required',
             'content' => 'required',
-            'age_restriction' => 'nullable|integer',
-            'attachment' => 'nullable|file'
+            'user_id' => 'required',
+            'age_restriction' => 'nullable'
         ]);
 
-        $news = new News($request->except('attachment'));
+        $news = News::create($validated);
 
-        if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('news_attachments', 'public');
-            $news->attachment = $path;
-        }
-
-        $news->save();
-        return response()->json($news, 201);
+        return response()->json([
+            "new_news" => $news
+        ], 201);
     }
 
-    public function update(Request $request, News $news)
+    function update_news($id, Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required',
             'content' => 'required',
-            'age_restriction' => 'nullable|integer',
-            'attachment' => 'nullable|file'
+            'age_restriction' => 'nullable'
         ]);
 
-        if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('news_attachments', 'public');
-            $news->attachment = $path;
-        }
+        $news = News::find($id)->update($validated);
 
-        $news->update($request->except('attachment'));
-        return response()->json($news);
+        return response()->json([
+            "updated_news" => $news
+        ]);
     }
 
-    public function destroy(News $news)
+    function delete_news($id)
     {
-        $news->delete();
-        return response()->json("deleted_course");
+        $news = News::find($id)->delete();
+
+        return response()->json([
+            "deleted_news" => $news
+        ]);
     }
 }
